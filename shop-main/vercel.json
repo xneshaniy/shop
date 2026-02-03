@@ -16,6 +16,6 @@
         "APP_ENV": "production",
         "APP_DEBUG": "true"
     },
-    "outputDirectory": "public",
-    "buildCommand": "npm run build && composer install --no-dev --optimize-autoloader"
+    "outputDirectory": "dist",
+    "buildCommand": "npm run build && composer install --no-dev --optimize-autoloader && mkdir -p dist && cp -r public/* dist/"
 }
