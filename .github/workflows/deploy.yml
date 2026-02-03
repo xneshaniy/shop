@@ -1,0 +1,47 @@
+name: Deploy to StackCP
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, openssl, pdo, gd, fileinfo
+        
+    - name: Install Composer dependencies
+      run: composer install --no-dev --optimize-autoloader
+      
+    - name: Install Node dependencies
+      run: |
+        npm install -g pnpm
+        pnpm install
+        
+    - name: Build assets
+      run: pnpm run build
+      
+    - name: Deploy to StackCP
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.STACKCP_HOST }}
+        username: ${{ secrets.STACKCP_USERNAME }}
+        key: ${{ secrets.STACKCP_SSH_KEY }}
+        script: |
+          cd /home/sites/1b/6/61a30ca205/public_html/shop/
+          git pull origin main
+          composer install --no-dev --optimize-autoloader
+          php artisan migrate --force
+          php artisan storage:link
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          chmod -R 755 storage bootstrap/cache
